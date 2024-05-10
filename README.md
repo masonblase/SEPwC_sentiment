@@ -75,6 +75,11 @@ easier than wrestling with filters all day!
 
 The graph doesn't need to be scientifically realistic or justified in any way. 
 
+To remove the HTML tags, running something like:
+`data$content <- gsub("<[^>]+>", "", data$content)`
+will do the trick. The above is a regular expression which looks for the
+HTML markers `<` and `>` (withn some text in between) and replaces them with nothing.
+
 ## The rules
 
 You cannot alter any of the `expect_*()` calls in `test/test_script.R`
