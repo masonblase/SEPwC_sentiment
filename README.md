@@ -46,7 +46,7 @@ from the test directory. Try it now, before you make any changes!
 
 ## The data
 
-The data were pulled from [Mastodon]https://mastodon.social/explore 
+The data were pulled from [Mastodon](https://mastodon.social/explore)
 on 22 Feb 2024 via a python script (also in the repo) that pulled public toots
 that contain the hashtag `#climatechange`.
 They were saved as a CSV file with the top level of the json file downloaded, saved
