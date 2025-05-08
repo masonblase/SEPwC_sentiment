@@ -9,8 +9,14 @@ library(ggpubr)
 })
 
 load_data<-function(filename) {
-
-    return()
+    file_path <- file.path("data", filename)
+    data <- read.csv(file_path) %>%
+      filter(language == "en")
+    data$content <- str_remove_all(data$content, "<[^>]+>")
+    data$created_at <- data$created_at %>% str_remove(".") %>%
+      as.POSIXct(format = "%Y-%m-%dT%H:%M:%OSZ", tz = "UTC")
+    data$id <- as.character(data$id)
+    return(data)
 }
 
 word_analysis<-function(toot_data, emotion) {
@@ -50,3 +56,4 @@ if(sys.nframe() == 0) {
   args = parser$parse_args()  
   main(args)
 }
+
