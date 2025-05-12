@@ -9,19 +9,37 @@ library(ggpubr)
 })
 
 load_data<-function(filename) {
-    file_path <- file.path("data", filename)
-    data <- read.csv(file_path) %>%
-      filter(language == "en")
-    data$content <- str_remove_all(data$content, "<[^>]+>")
+    # Read data
+    data <- read.csv(filename) %>%
+      filter(language == "en") # Only take sources in English
+    data$content <- str_remove_all(data$content, "<[^>]+>") # Remove HTML from content
+    
+    # Convert created_at to date time
     data$created_at <- data$created_at %>% str_remove(".") %>%
       as.POSIXct(format = "%Y-%m-%dT%H:%M:%OSZ", tz = "UTC")
-    data$id <- as.character(data$id)
+    data$id <- as.character(data$id) # Ensure "id" is character class
     return(data)
 }
 
 word_analysis<-function(toot_data, emotion) {
-
-    return()
+    # Load lexicon
+    nrc_lex <- get_sentiments("nrc")
+    
+    # Tokenize toots and join with lexicon
+    word_data <- toot_data %>%
+      select(id, created_at, content) %>%
+      unnest_tokens(word, content) %>%
+      inner_join(nrc_lex, by = "word") %>%
+      filter(sentiment == "emotion") %>%
+      group_by(word) %>%
+      summarise(n = n()) %>%
+      arrange(desc(n)) %>%
+      top_n(10, n)
+    
+    # Print dataframe
+    print(word_data)
+      
+    return(word_data)
 }
 
 sentiment_analysis<-function(toot_data) {
@@ -57,3 +75,5 @@ if(sys.nframe() == 0) {
   main(args)
 }
 
+# Copyright © 2025 Mason Rodrigue
+# All rights reserved.
