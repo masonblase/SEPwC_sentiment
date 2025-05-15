@@ -104,7 +104,7 @@ sentiment_analysis<-function(toot_data, plot_file = NULL, verbose = FALSE) {
   }
   
   # Plot data if requested
-  if (!is.null(plot_file)) {
+  if (!is.null(plot_file) && nrow(sentiment_data) > 0) {
     p <- ggplot(sentiment_data, aes(x = created_at, y = sentiment, color = method)) +
       geom_line() +
       geom_smooth(method = "loess", se = FALSE) +
@@ -140,8 +140,8 @@ sentiment_analysis<-function(toot_data, plot_file = NULL, verbose = FALSE) {
 main <- function(args) {
   data_file <- args$filename
   emotion <- args$emotion
-  plot_file <- args$plot
-  verbose <- args$verbose
+  plot_file <- if (!is.null(args$output)) args$output else args$plot
+  verbose <- isTRUE(args$verbose)
   
   # Load data
   toot_data <- load_data(data_file)
