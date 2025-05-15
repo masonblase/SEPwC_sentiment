@@ -32,10 +32,10 @@ word_analysis<-function(toot_data, emotion, verbose = FALSE) {
     word_data <- toot_data %>%
       select(id, created_at, content) %>%
       unnest_tokens(word, content) %>%
-      inner_join(nrc_lex, by = "word") %>%
+      inner_join(nrc_lex, by = "word", relationship = "many-to-many") %>%
       filter(sentiment == "emotion") %>%
       group_by(word) %>%
-      summarise(n = n()) %>%
+      summarise(n = n(), .groups = "drop") %>%
       arrange(desc(n)) %>%
       top_n(10, n)
     
@@ -53,17 +53,17 @@ sentiment_analysis<-function(toot_data, plot_file = NULL, verbose = FALSE) {
   # Get AFINN sentiment
   afinn_sentiment <- toot_data %>%
     select(id, created_at, content) %>%
-    unnest_tokens(word, conent) %>%
-    inner_join(get_sentiments("afinn"), by = "word") %>%
+    unnest_tokens(word, content) %>%
+    inner_join(get_sentiments("afinn"), by = "word", relationship = "many-to-many") %>%
     group_by(id, created_at) %>%
-    summarise(sentiment = sum(value)) %>%
+    summarise(sentiment = sum(value), .groups = "drop") %>%
     mutate(method = "afinn")
   
   # Get bing sentiment
   bing_sentiment <- toot_data %>%
     select(id, created_at, content) %>%
     unnest_tokens(word, content) %>%
-    inner_join(get_sentiments("bing"), by = "word") %>%
+    inner_join(get_sentiments("bing"), by = "word", relationship = "many-to-many") %>%
     count(id, created_at, sentiment) %>%
     pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
     mutate(sentiment = positive - negative) %>%
@@ -74,9 +74,9 @@ sentiment_analysis<-function(toot_data, plot_file = NULL, verbose = FALSE) {
   nrc_sentiment <- toot_data %>%
     select(id, created_at, content) %>%
     unnest_tokens(word, content) %>%
-    inner_join(get_sentiments("nrc"), by = "word") %>%
+    inner_join(get_sentiments("nrc"), by = "word", relationship = "many-to-many") %>%
     group_by(id, created_at, sentiment) %>%
-    summarise(n = n()) %>%
+    summarise(n = n(), .groups = "drop") %>%
     filter(sentiment %in% c("positive", "negative")) %>%
     pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
     mutate(sentiment = positive - negative) %>%
