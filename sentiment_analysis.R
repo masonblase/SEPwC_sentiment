@@ -22,7 +22,7 @@ load_data<-function(filename) {
     return(data)
 }
 
-word_analysis<-function(toot_data, emotion) {
+word_analysis<-function(toot_data, emotion, verbose = FALSE) {
     # Function coded with assistance from Google Gemini
   
     # Load lexicon
@@ -47,7 +47,7 @@ word_analysis<-function(toot_data, emotion) {
     return(word_data)
 }
 
-sentiment_analysis<-function(toot_data) {
+sentiment_analysis<-function(toot_data, plot_file = NULL, verbose = FALSE) {
   # Function coded with assistance from Google Gemini
   
   # Get AFINN sentiment
@@ -112,7 +112,22 @@ sentiment_analysis<-function(toot_data) {
 }
 
 main <- function(args) {
-
+  data_file <- args$filename
+  emotion <- args$emotion
+  plot_file <- args$plot
+  verbose <- args$verbose
+  
+  # Load data
+  toot_data <- load_data(data_file)
+  
+  # Perform word analysis
+  word_data <- word_analysis(toot_data, emotion, verbose = verbose)
+  if (!verbose) {
+    print(word_data)
+  }
+  
+  # Perform sentiment analysis and optionally plot
+  sentiment_data <- sentiment_analysis(toot_data, plot_file, verbose = verbose)
 }
 
 
