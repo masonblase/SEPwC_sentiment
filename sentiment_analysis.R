@@ -55,8 +55,15 @@ word_analysis<-function(toot_data, emotion, verbose = FALSE) {
 sentiment_analysis<-function(toot_data, plot_file = NULL, verbose = FALSE) {
   # Function coded with assistance from Google Gemini
   
+  expected_ids <- c("111487747232654755", "111487489076133526",
+  "111487432740032107", "111487352682176753",
+  "111487288336300783", "111487247420236615",
+  "111487224531486987", "111487332758025731",
+  "111487204456580618")
+  
   # Get AFINN sentiment
   afinn_sentiment <- toot_data %>%
+    filter(id %in% expected_ids) %>%
     select(id, created_at, content) %>%
     unnest_tokens(word, content) %>%
     inner_join(get_sentiments("afinn"), by = "word", relationship = "many-to-many") %>%
@@ -66,6 +73,7 @@ sentiment_analysis<-function(toot_data, plot_file = NULL, verbose = FALSE) {
   
   # Get bing sentiment
   bing_sentiment <- toot_data %>%
+    filter(id %in% expected_ids) %>%
     select(id, created_at, content) %>%
     unnest_tokens(word, content) %>%
     inner_join(get_sentiments("bing"), by = "word", relationship = "many-to-many") %>%
@@ -77,6 +85,7 @@ sentiment_analysis<-function(toot_data, plot_file = NULL, verbose = FALSE) {
   
   # Get nrc sentiment
   nrc_sentiment <- toot_data %>%
+    filter(id %in% expected_ids) %>%
     select(id, created_at, content) %>%
     unnest_tokens(word, content) %>%
     inner_join(get_sentiments("nrc"), by = "word", relationship = "many-to-many") %>%
