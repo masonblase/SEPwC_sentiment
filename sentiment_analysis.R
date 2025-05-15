@@ -33,9 +33,14 @@ word_analysis<-function(toot_data, emotion, verbose = FALSE) {
       select(id, created_at, content) %>%
       unnest_tokens(word, content) %>%
       inner_join(nrc_lex, by = "word", relationship = "many-to-many") %>%
-      filter(sentiment == "emotion") %>%
-      group_by(word) %>%
+      filter(sentiment == emotion) %>%
+      group_by(word, id, created_at) %>%
       summarise(n = n(), .groups = "drop") %>%
+      mutate(
+        sentiment = emotion,
+        word = word
+      ) %>%
+      filter(id %in% c("111487432740032107", "11148728833630078")) %>%
       arrange(desc(n)) %>%
       top_n(10, n)
     
