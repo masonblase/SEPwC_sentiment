@@ -42,7 +42,7 @@ word_analysis <- function(toot_data, emotion, verbose = FALSE) {
     arrange(desc(n)) %>%
     top_n(10, n)
 
-  if (verbose) {
+  if (isTRUE(verbose)) {
     print(paste("Top 10 words for emotion:", emotion))
     print(word_data)
   }
@@ -50,9 +50,7 @@ word_analysis <- function(toot_data, emotion, verbose = FALSE) {
   return(word_data)
 }
 
-sentiment_analysis <- function(toot_data,
-                               plot_file = NULL,
-                               verbose = FALSE) {
+sentiment_analysis <- function(toot_data, plot_file = NULL, verbose = FALSE) {
   # Function coded with assistance from Google Gemini
 
   # Process data
@@ -63,6 +61,7 @@ sentiment_analysis <- function(toot_data,
   all_ids <- toot_data %>%
     select(id, created_at) %>%
     distinct()
+
   methods <- c("afinn", "nrc", "bing")
   full_grid <- tidyr::expand_grid(all_ids, method = methods)
 
@@ -116,7 +115,7 @@ sentiment_analysis <- function(toot_data,
 
   sentiment_data$method <- factor(sentiment_data$method, levels = c("afinn", "nrc", "bing"))
 
-  if (verbose) {
+  if (isTRUE(verbose)) {
     print("Sentiment Analysis Data:")
     print(sentiment_data)
   }
@@ -125,26 +124,21 @@ sentiment_analysis <- function(toot_data,
   if (!is.null(plot_file) && nrow(sentiment_data) > 0) {
     p <- ggplot(
       sentiment_data,
-      aes(x = created_at,
-          y = sentiment,
-          color = method)
-      ) +
+      aes(x = created_at, y = sentiment, color = method)
+    ) +
       geom_line() +
       geom_smooth(method = "loess", se = FALSE) +
-      labs(
-        title = "Sentiment Analysis Over Time",
-        x = "Time of Toot",
-        y = "Sentiment Score"
-      ) +
+      labs(title = "Sentiment Analysis Over Time", x = "Time of Toot", y = "Sentiment Score") +
       facet_wrap(~method, ncol = 1) +
       theme_minimal() +
       scale_color_brewer(palette = "Dark2")
-    ggsave(plot_file,
+    suppressMessages(ggsave(
+      plot_file,
       plot = p,
       width = 8,
       height = 6
-    )
-    if (verbose) {
+    ))
+    if (isTRUE(verbose)) {
       print(paste("Plot saved to", plot_file))
     }
   }
@@ -184,12 +178,11 @@ main <- function(args) {
 
   # Perform word analysis
   word_data <- word_analysis(toot_data, emotion, verbose = verbose)
-  if (!verbose) {
-    print(word_data)
-  }
 
   # Perform sentiment analysis and optionally plot
   sentiment_data <- sentiment_analysis(toot_data, plot_file, verbose = verbose)
+  
+  invisible(NULL)
 }
 
 
