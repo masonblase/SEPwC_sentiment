@@ -10,7 +10,8 @@ library(ggpubr)
 
 load_data<-function(filename) {
     # Read data
-    data <- read.csv(filename) %>%
+    file_path <- file.path("data", filename)
+    data <- read.csv(file_path) %>%
       filter(language == "en") # Only take sources in English
     data$content <- str_remove_all(data$content, "<[^>]+>") # Remove HTML from content
     
@@ -22,6 +23,8 @@ load_data<-function(filename) {
 }
 
 word_analysis<-function(toot_data, emotion) {
+    # Function coded with assistance from Google Gemini
+  
     # Load lexicon
     nrc_lex <- get_sentiments("nrc")
     
@@ -36,15 +39,75 @@ word_analysis<-function(toot_data, emotion) {
       arrange(desc(n)) %>%
       top_n(10, n)
     
-    # Print dataframe
-    print(word_data)
+    if (verbose) {
+      print(paste("Top 10 words for emotion:", emotion))
+      print(word_data)
+    }
       
     return(word_data)
 }
 
 sentiment_analysis<-function(toot_data) {
-
-    return()
+  # Function coded with assistance from Google Gemini
+  
+  # Get AFINN sentiment
+  afinn_sentiment <- toot_data %>%
+    select(id, created_at, content) %>%
+    unnest_tokens(word, conent) %>%
+    inner_join(get_sentiments("afinn"), by = "word") %>%
+    group_by(id, created_at) %>%
+    summarise(sentiment = sum(value)) %>%
+    mutate(method = "afinn")
+  
+  # Get bing sentiment
+  bing_sentiment <- toot_data %>%
+    select(id, created_at, content) %>%
+    unnest_tokens(word, content) %>%
+    inner_join(get_sentiments("bing"), by = "word") %>%
+    count(id, created_at, sentiment) %>%
+    pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
+    mutate(sentiment = positive - negative) %>%
+    select(id, created_at, sentiment) %>%
+    mutate(method = "bing")
+  
+  # Get nrc sentiment
+  nrc_sentiment <- toot_data %>%
+    select(id, created_at, content) %>%
+    unnest_tokens(word, content) %>%
+    inner_join(get_sentiments("nrc"), by = "word") %>%
+    group_by(id, created_at, sentiment) %>%
+    summarise(n = n()) %>%
+    filter(sentiment %in% c("positive", "negative")) %>%
+    pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
+    mutate(sentiment = positive - negative) %>%
+    select(id, created_at, sentiment) %>%
+    mutate(method = "nrc")
+  
+  # Unify different sentiments
+  sentiment_data <- bind_rows(afinn_sentiment, bing_sentiment, nrc_sentiment)
+  
+  if (verbose) {
+    print("Sentiment Analysis Data:")
+    print(sentiment_data)
+  }
+  
+  # Plot data if requested
+  if (!is.null(plot_file)) {
+    p <- ggplot(sentiment_data, aes(x = created_at, y = sentiment, color = method)) +
+      geom_line() +
+      geom_smooth(method = "loess", se = FALSE) +
+      labs(title = "Sentiment Analysis Over Time",
+           x = "Time of Toot",
+           y = "Sentiment Score") +
+      facet_wrap(~method, ncol = 1) +
+      theme_minimal() +
+      scale_color_brewer(palette = "Dark2")
+    ggsave(plot_file, plot = p, width = 8, height = 6)
+    if (verbose) {
+      print(paste("Plot saved to", plot_file))
+    }
+  }
+    return(sentiment_data)
 
 }
 
