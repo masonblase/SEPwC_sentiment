@@ -3,6 +3,7 @@ library(sentimentr)
 library(tidytext)
 library(lubridate)
 library(dplyr)
+library(stringr)
 library(tidyr)
 library(argparse)
 library(ggpubr)
@@ -10,8 +11,7 @@ library(ggpubr)
 
 load_data<-function(filename) {
     # Read data
-    file_path <- file.path("data", filename)
-    data <- read.csv(file_path) %>%
+    data <- read.csv(filename) %>%
       filter(language == "en") # Only take sources in English
     data$content <- str_remove_all(data$content, "<[^>]+>") # Remove HTML from content
     
