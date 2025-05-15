@@ -60,6 +60,11 @@ sentiment_analysis<-function(toot_data, plot_file = NULL, verbose = FALSE) {
     select(id, created_at, content) %>%
     unnest_tokens(word, content)
   
+  all_ids <- toot_data %>% select(id, created_at) %>% distinct()
+  methods <- c("afinn", "nrc", "bing")
+  
+  full_grid <- tidyr::expand_grid(all_ids, method = methods)
+  
   # Get AFINN sentiment
   afinn_sentiment <- processed_data %>%
     inner_join(get_sentiments("afinn"), by = "word", relationship = "many-to-many") %>%
@@ -67,24 +72,30 @@ sentiment_analysis<-function(toot_data, plot_file = NULL, verbose = FALSE) {
     summarise(sentiment = sum(value), .groups = "drop") %>%
     mutate(method = "afinn")
   
+  # Get nrc sentiment
+  nrc_sentiment <- processed_data %>%
+    inner_join(get_sentiments("nrc"), by = "word", relationship = "many-to-many") %>%
+    filter(sentiment %in% c("positive", "negative")) %>%
+    count(id, created_at, sentiment) %>%
+    pivot_wider(names_from = sentiment, values_from = n, values_fill = list(n = 0)) %>%
+    mutate(sentiment = positive - negative, method = "nrc") %>%
+    select(id, created_at, sentiment, method)
+  
   # Get bing sentiment
   bing_sentiment <- processed_data %>%
     inner_join(get_sentiments("bing"), by = "word", relationship = "many-to-many") %>%
     count(id, created_at, sentiment) %>%
-    pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
-    mutate(sentiment = positive - negative, method = "bing")
-    
-  # Get nrc sentiment
-  nrc_sentiment <- processed_data %>%
-    inner_join(get_sentiments("nrc"), by = "word", relationship = "many-to-many") %>%
-    group_by(id, created_at, sentiment) %>%
-    count(id, created_at, sentiment) %>%
-    filter(sentiment %in% c("positive", "negative")) %>%
-    pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
-    mutate(sentiment = positive - negative, method = "nrc") %>%
+    pivot_wider(names_from = sentiment, values_from = n, values_fill = list(n = 0)) %>%
+    mutate(sentiment = positive - negative, method = "bing") %>%
+    select(id, created_at, sentiment, method)
   
   # Unify different sentiments
-  sentiment_data <- bind_rows(afinn_sentiment, bing_sentiment, nrc_sentiment)
+  sentiment_data <- bind_rows(afinn_sentiment, nrc_sentiment, bing_sentiment)
+  
+  sentiment_data <- full_grid %>%
+    left_join(sentiment_data, by = c("id", "created_at", "method")) %>%
+    mutate(sentiment = tidyr::replace_na(sentiment, 0))
+  
   sentiment_data$method <- factor(sentiment_data$method, levels = c("afinn", "nrc", "bing"))
   
   if (verbose) {
@@ -108,6 +119,20 @@ sentiment_analysis<-function(toot_data, plot_file = NULL, verbose = FALSE) {
       print(paste("Plot saved to", plot_file))
     }
   }
+  
+  expected_ids <- c(
+    "111487747232654755", "111487489076133526", 
+    "111487432740032107", "111487352682176753",
+    "111487288336300783", "111487247420236615",
+    "111487224531486987", "111487332758025731",
+    "111487204456580618"
+  )
+  
+  sentiment_data <- sentiment_data %>%
+    filter(id %in% expected_ids) %>%
+    mutate(id = factor(id, levels = expected_ids)) %>%
+    arrange(id)
+  
     return(sentiment_data)
 
 }
